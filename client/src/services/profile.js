@@ -27,7 +27,7 @@ export const getUserProfile = async (uid) => {
 export const createUserProfile = async (uid, data) => {
   const { error } = await supabase
     .from('users')
-    .insert([{
+    .upsert([{
       id: uid,
       uid,
       profileComplete: false,
