@@ -28,7 +28,6 @@ export default function UserMenu() {
     }
   };
 
-  if (!profile) return null;
 
   return (
     <div className="relative" ref={menuRef}>
@@ -37,9 +36,9 @@ export default function UserMenu() {
         className="flex items-center gap-2 hover:bg-[#18345F] p-2 rounded-full transition"
       >
         <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center text-xl shadow-inner">
-          {profile.avatar || "👦"}
+          {profile?.avatar || "👤"}
         </div>
-        <span className="text-white font-bold hidden sm:block">{profile.displayName || 'User'}</span>
+        <span className="text-white font-bold hidden sm:block">{profile?.displayName || 'User'}</span>
       </button>
 
       {isOpen && (

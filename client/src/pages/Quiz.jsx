@@ -87,6 +87,48 @@ function Quiz() {
     setIsFinished(false);
   };
 
+  // --- RESULTS SCREEN EFFECT ---
+  // MUST be before early returns to obey Rules of Hooks!
+  useEffect(() => {
+    if (isFinished && !hasSavedProgress && profile) {
+      setHasSavedProgress(true);
+      const score = allResults.filter(r => r.correct).length;
+      
+      // They get 50 XP for reading + 10 XP per correct question
+      const earnedXp = 50 + (score * 10);
+      
+      // Calculate streak
+      const today = new Date().toISOString().split('T')[0];
+      const lastRead = profile.lastReadDate ? new Date(profile.lastReadDate).toISOString().split('T')[0] : null;
+      
+      let newStreak = profile.streak || 0;
+      if (lastRead !== today) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        if (lastRead === yesterdayStr) {
+          newStreak += 1;
+        } else {
+          newStreak = 1;
+        }
+      }
+      
+      // Mark quiz as completed in localStorage
+      const finishedQuizzes = JSON.parse(localStorage.getItem('completedQuizzes') || '[]');
+      if (!finishedQuizzes.includes(storyId)) {
+        localStorage.setItem('completedQuizzes', JSON.stringify([...finishedQuizzes, storyId]));
+      }
+      
+      updateUserProfile(user.id, {
+        xp: (profile.xp || 0) + earnedXp,
+        storiesRead: (profile.storiesRead || 0) + 1,
+        streak: newStreak,
+        lastReadDate: new Date().toISOString()
+      }).catch(err => console.error("Failed to save progress", err));
+    }
+  }, [isFinished, hasSavedProgress, profile, allResults, user?.id, storyId]);
+
   if (loading) {
     return (
       <div className="min-h-[70vh] flex flex-col justify-center items-center text-white">
@@ -111,20 +153,7 @@ function Quiz() {
     );
   }
 
-  // --- RESULTS SCREEN ---
-  useEffect(() => {
-    if (isFinished && !hasSavedProgress && profile) {
-      setHasSavedProgress(true);
-      const score = allResults.filter(r => r.correct).length;
-      const earnedXp = score * 10;
-      
-      updateUserProfile(user.id, {
-        xp: (profile.xp || 0) + earnedXp,
-        storiesRead: (profile.storiesRead || 0) + 1
-      }).catch(err => console.error("Failed to save progress", err));
-    }
-  }, [isFinished, hasSavedProgress, profile, allResults, user?.id]);
-
+  // --- RESULTS SCREEN RENDER ---
   if (isFinished) {
     const score = allResults.filter(r => r.correct).length;
     const total = quizData.questions.length;
@@ -168,7 +197,23 @@ function Quiz() {
   }
 
   // --- QUESTION FLOW ---
-  const currentQuestion = quizData.questions[currentQuestionIndex];
+  const currentQuestion = quizData?.questions?.[currentQuestionIndex];
+  
+  if (!quizData || !currentQuestion) {
+    return (
+      <div className="min-h-[70vh] flex flex-col justify-center items-center text-white">
+        <AlertCircle size={80} className="text-red-400 mb-6" />
+        <h2 className="text-3xl font-bold text-amber-300 mb-8">No questions found in this quiz!</h2>
+        <button 
+          onClick={() => navigate(`/story/${storyId}`)}
+          className="flex items-center gap-2 bg-white/10 border border-white/20 px-8 py-4 rounded-full hover:bg-white/20 font-bold transition-all"
+        >
+          <ArrowLeft size={20} /> Back to Story
+        </button>
+      </div>
+    );
+  }
+
   const progressPercent = ((currentQuestionIndex) / quizData.questions.length) * 100;
 
   return (

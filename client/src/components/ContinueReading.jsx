@@ -6,18 +6,37 @@ import { AuthContext } from '../context/AuthContext';
 function ContinueReading() {
   const { user } = useContext(AuthContext);
   const [lastOpened, setLastOpened] = useState(null);
+  const [isQuizPending, setIsQuizPending] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      const saved = localStorage.getItem(`lastOpenedStory_${user.id}`);
-      if (saved) {
-        try {
-          setLastOpened(JSON.parse(saved));
-        } catch (e) {
-          console.error("Failed to parse last opened story");
+    const checkStatus = () => {
+      if (user) {
+        const saved = localStorage.getItem(`lastOpenedStory_${user.id}`);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            
+            const completedStories = JSON.parse(localStorage.getItem('completedStories') || '[]');
+            const completedQuizzes = JSON.parse(localStorage.getItem('completedQuizzes') || '[]');
+            
+            if (completedQuizzes.includes(parsed.id)) {
+              setLastOpened(null); // Fully completed
+              return;
+            }
+            
+            setLastOpened(parsed);
+            setIsQuizPending(completedStories.includes(parsed.id));
+          } catch (e) {
+            console.error("Failed to parse last opened story");
+          }
         }
       }
-    }
+    };
+    
+    checkStatus();
+    // Re-check when window regains focus to update in real-time
+    window.addEventListener('focus', checkStatus);
+    return () => window.removeEventListener('focus', checkStatus);
   }, [user]);
 
   if (!lastOpened) {
@@ -48,19 +67,21 @@ function ContinueReading() {
             {lastOpened.title}
           </h3>
           <p className="text-slate-300 font-medium mb-2">
-            You have an unfinished adventure waiting for you!
+            {isQuizPending 
+              ? "You've read the story, now test your knowledge!" 
+              : "You have an unfinished adventure waiting for you!"}
           </p>
           
-          <div className="inline-block bg-amber-400/20 text-amber-300 px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase border border-amber-400/30">
-            In Progress
+          <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase border ${isQuizPending ? 'bg-emerald-400/20 text-emerald-300 border-emerald-400/30' : 'bg-amber-400/20 text-amber-300 border-amber-400/30'}`}>
+            {isQuizPending ? "Quiz Pending" : "In Progress"}
           </div>
         </div>
 
         <Link
-          to={`/story/${lastOpened.id}`}
-          className="w-full md:w-auto mt-4 md:mt-0 flex items-center justify-center gap-2 bg-white text-slate-900 hover:bg-amber-400 px-8 py-4 rounded-full font-bold transition-all duration-300 hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(251,191,36,0.4)]"
+          to={isQuizPending ? `/quiz/${lastOpened.id}` : `/story/${lastOpened.id}`}
+          className={`w-full md:w-auto mt-4 md:mt-0 flex items-center justify-center gap-2 text-slate-900 px-8 py-4 rounded-full font-bold transition-all duration-300 hover:scale-105 ${isQuizPending ? 'bg-emerald-400 hover:bg-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.3)]' : 'bg-white hover:bg-amber-400 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(251,191,36,0.4)]'}`}
         >
-          Continue <ArrowRight size={20} />
+          {isQuizPending ? "Take Quiz" : "Continue"} <ArrowRight size={20} />
         </Link>
       </div>
     </div>

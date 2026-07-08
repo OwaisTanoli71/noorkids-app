@@ -59,7 +59,11 @@ export default function CompleteProfileForm() {
       }
       
       await refreshProfile();
-      navigate('/');
+      
+      // Delay navigation slightly so AuthContext state updates first
+      setTimeout(() => {
+        navigate('/');
+      }, 100);
     } catch (err) {
       console.error(err);
       setErrors({ global: "Failed to save profile. Please try again." });

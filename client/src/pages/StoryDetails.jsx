@@ -23,6 +23,9 @@ function StoryDetails() {
     if (id) {
       const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
       setIsBookmarked(bookmarks.includes(id));
+      
+      const completed = JSON.parse(localStorage.getItem('completedStories') || '[]');
+      setHasRead(completed.includes(id));
     }
   }, [id]);
 
@@ -47,37 +50,26 @@ function StoryDetails() {
     setUpdating(true);
     
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const lastRead = profile.lastReadDate ? new Date(profile.lastReadDate).toISOString().split('T')[0] : null;
-      
-      let newStreak = profile.streak || 0;
-      if (lastRead !== today) {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-        
-        if (lastRead === yesterdayStr) {
-          newStreak += 1;
-        } else {
-          newStreak = 1;
-        }
-      }
-
-      await updateUserProfile(user.id, {
-        storiesRead: (profile.storiesRead || 0) + 1,
-        xp: (profile.xp || 0) + 50,
-        streak: newStreak,
-        lastReadDate: new Date().toISOString()
-      });
+      // Do not update XP/Streak here, let Quiz handle it!
       
       if (user) {
         localStorage.removeItem(`lastOpenedStory_${user.id}`);
       }
       
+      const completed = JSON.parse(localStorage.getItem('completedStories') || '[]');
+      if (!completed.includes(id)) {
+        localStorage.setItem('completedStories', JSON.stringify([...completed, id]));
+      }
+      
       setHasRead(true);
     } catch (err) {
       console.error("Error updating progress:", err);
-      setHasRead(true); // Allow them to proceed locally even if network fails
+      // Allow them to proceed locally even if network fails
+      const completed = JSON.parse(localStorage.getItem('completedStories') || '[]');
+      if (!completed.includes(id)) {
+        localStorage.setItem('completedStories', JSON.stringify([...completed, id]));
+      }
+      setHasRead(true); 
     } finally {
       setUpdating(false);
     }
