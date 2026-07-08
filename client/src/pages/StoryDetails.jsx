@@ -17,6 +17,27 @@ function StoryDetails() {
   const [showAudio, setShowAudio] = useState(false);
   const [hasRead, setHasRead] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+      setIsBookmarked(bookmarks.includes(id));
+    }
+  }, [id]);
+
+  const toggleBookmark = () => {
+    const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+    let newBookmarks;
+    if (bookmarks.includes(id)) {
+      newBookmarks = bookmarks.filter(b => b !== id);
+      setIsBookmarked(false);
+    } else {
+      newBookmarks = [...bookmarks, id];
+      setIsBookmarked(true);
+    }
+    localStorage.setItem('bookmarks', JSON.stringify(newBookmarks));
+  };
 
   const handleMarkAsRead = async () => {
     if (hasRead || updating || !user || !profile) {
@@ -213,11 +234,18 @@ function StoryDetails() {
               {!hasRead && <span className="text-[10px] uppercase tracking-wider text-rose-400 bg-rose-400/10 px-2 py-1 rounded border border-rose-400/20">Locked</span>}
             </button>
 
-            <button className="w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 font-bold border border-transparent hover:border-white/5 hover:bg-[#343b4e] bg-[#2a3041] text-slate-200">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-[#5c4a2a] text-[#deaa48]">
-                <Bookmark size={20} />
+            <button 
+              onClick={toggleBookmark}
+              className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 font-bold border ${
+                isBookmarked 
+                  ? 'border-[#deaa48]/30 bg-[#5c4a2a]/40 text-[#deaa48]' 
+                  : 'border-transparent hover:border-white/5 hover:bg-[#343b4e] bg-[#2a3041] text-slate-200'
+              }`}
+            >
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isBookmarked ? 'bg-[#deaa48] text-amber-900' : 'bg-[#5c4a2a] text-[#deaa48]'}`}>
+                <Bookmark fill={isBookmarked ? "currentColor" : "none"} size={20} />
               </div>
-              <span className="text-sm md:text-base">Bookmark</span>
+              <span className="text-sm md:text-base">{isBookmarked ? 'Bookmarked' : 'Bookmark'}</span>
             </button>
             
           </div>

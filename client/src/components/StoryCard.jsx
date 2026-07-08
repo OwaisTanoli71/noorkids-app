@@ -1,9 +1,33 @@
 import { Link } from "react-router-dom";
 import { Bookmark, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function StoryCard({ story }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  useEffect(() => {
+    if (story?.id) {
+      const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+      setIsBookmarked(bookmarks.includes(story.id));
+    }
+  }, [story?.id]);
+
+  const toggleBookmark = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+    let newBookmarks;
+    if (bookmarks.includes(story.id)) {
+      newBookmarks = bookmarks.filter(b => b !== story.id);
+      setIsBookmarked(false);
+    } else {
+      newBookmarks = [...bookmarks, story.id];
+      setIsBookmarked(true);
+    }
+    localStorage.setItem('bookmarks', JSON.stringify(newBookmarks));
+  };
+
   const hue = story.title.length * 15 % 360;
   const gradient = story.color || `linear-gradient(135deg, hsl(${hue}, 80%, 40%), hsl(${hue + 30}, 90%, 30%))`;
 
@@ -17,8 +41,11 @@ function StoryCard({ story }) {
       {/* Decorative background circle */}
       <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition duration-700 pointer-events-none"></div>
 
-      <button className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors z-10">
-        <Bookmark fill="currentColor" size={24} />
+      <button 
+        onClick={toggleBookmark}
+        className={`absolute top-6 right-6 transition-colors z-10 ${isBookmarked ? 'text-amber-400 hover:text-amber-300' : 'text-white/50 hover:text-white'}`}
+      >
+        <Bookmark fill={isBookmarked ? "currentColor" : "none"} size={24} />
       </button>
 
       <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-5xl mb-6 shadow-inner border border-white/20 group-hover:scale-110 transition-transform duration-500">
