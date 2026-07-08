@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import UserMenu from "./Auth/UserMenu";
-import { BookOpen, Sparkles, Brain, Home } from 'lucide-react';
+import { BookOpen, Sparkles, Brain, Home, BookHeart } from 'lucide-react';
 
 function Navbar() {
   const { user } = useAuth();
@@ -34,6 +34,9 @@ function Navbar() {
               </Link>
               <Link to="/stories" className={navLinkClass("/stories")}>
                 <BookOpen size={18} /> Stories
+              </Link>
+              <Link to="/quran" className={navLinkClass("/quran")}>
+                <BookHeart size={18} /> Quran
               </Link>
               <Link to="/ai" className={navLinkClass("/ai")}>
                 <Sparkles size={18} /> Ask AI

@@ -33,6 +33,26 @@ It is built for two kinds of people at once. Children around five to ten years o
 
 🛠️ An admin panel, separate from the main app, where new stories can be uploaded and registered users can be reviewed.
 
+## 🧠 AI and Data Integrations
+
+- **OpenAI (GPT-4o / GPT-4o-mini)**: Powers the conversational AI chatbot, story summarization, and character interactions.
+- **OpenAI Whisper**: Used for accurate, multi-lingual speech-to-text processing during Quran recitation practice.
+- **Groq (Llama-3)**: Handles high-speed offline batch processing (e.g., extracting moral lessons from 100+ stories during the build step).
+- **Supabase**: Provides Postgres, Authentication (JWT), Row Level Security (RLS), and real-time progress syncing.
+- **Al Quran Cloud API**: Provides the foundational Uthmani text, Tajweed rules, English/Urdu translations, and audio recitations for the Quran section.
+
+---
+
+## 📖 Quran Feature & Tajweed Accuracy
+
+The Quran section uses data fetched directly from the [Al Quran Cloud API](https://alquran.cloud/api), a free and public REST API that requires no authentication. The Uthmani text is displayed with embedded Tajweed markup, colored using a simple legend for easy reading.
+
+**Recitation Practice (Phase 1)**
+The recitation practice feature uses OpenAI Whisper to transcribe the user's recitation and compares it word-by-word against the normalized target Ayah to provide accuracy feedback (checking if the correct words were recited in the correct order).
+
+**Future Direction (Phase 2)**
+True acoustic Tajweed verification (e.g., checking if a *madd* was held for 4 counts, or if a *qalqalah* was bounced correctly) is not currently supported by generic STT models like Whisper. Doing this responsibly would require integrating a specialized acoustic model trained specifically on Quranic recitation or a purpose-built 3rd-party API. We do not attempt to "fake" pronunciation scoring using confidence scores, as this would misrepresent the feedback to learners.
+
 ## 🧰 Tech Stack
 
 | Layer | Technology |

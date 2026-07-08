@@ -2,18 +2,26 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerUser } from '../../services/auth';
 import { createUserProfile } from '../../services/profile';
-import { Mail, Lock, AlertCircle, Sparkles, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 
 export default function RegisterForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [globalError, setGlobalError] = useState('');
+  const [shake, setShake] = useState(false);
   
   const navigate = useNavigate();
+
+  const triggerShake = () => {
+    setShake(false);
+    setTimeout(() => setShake(true), 10);
+  };
 
   const validate = () => {
     const newErrors = {};
@@ -26,6 +34,9 @@ export default function RegisterForm() {
     if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
     
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      triggerShake();
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -57,87 +68,101 @@ export default function RegisterForm() {
       } else {
         setGlobalError(err.message || "Failed to create an account. Please try again.");
       }
+      triggerShake();
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="glass-panel p-8 md:p-12 rounded-[2.5rem] w-full max-w-md mx-auto text-white">
-      <h2 className="text-3xl font-black mb-2 text-center text-white tracking-tight flex items-center justify-center gap-3">
-        Join NoorKids <Sparkles className="text-amber-400" />
-      </h2>
-      <p className="text-center text-slate-400 mb-8 font-medium">Create a parent account to begin</p>
-      
+    <div className={`w-full text-white ${shake ? 'animate-shake' : ''}`}>
       {globalError && (
-        <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 p-4 rounded-2xl mb-6 text-sm flex items-start gap-3">
+        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 p-3.5 rounded-xl mb-6 text-sm flex items-start gap-3 animate-fade-in-up">
           <AlertCircle size={18} className="shrink-0 mt-0.5" />
           <p>{globalError}</p>
         </div>
       )}
       
-      <form onSubmit={handleRegister} className="flex flex-col gap-5">
-        <div>
-          <label className="block text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide">Email</label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+      <form onSubmit={handleRegister} className="flex flex-col gap-4">
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-slate-300">Email address</label>
+          <div className="relative group/input">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within/input:text-amber-400 transition-colors duration-300">
               <Mail size={18} />
             </div>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={`w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white/5 border ${errors.email ? 'border-rose-400' : 'border-white/10'} focus:outline-none focus:border-amber-400/50 focus:bg-white/10 text-white transition-all duration-300 placeholder:text-slate-500`}
+              className={`w-full pl-11 pr-4 py-3 bg-[#141824] border ${errors.email ? 'border-rose-400' : 'border-[#2A2F3E]'} rounded-xl focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 text-white transition-all placeholder:text-slate-500/70 shadow-inner`}
               placeholder="parent@example.com"
             />
           </div>
-          {errors.email && <p className="text-rose-400 text-xs mt-2 font-bold ml-1">{errors.email}</p>}
+          {errors.email && <p className="text-rose-400 text-xs mt-1 animate-fade-in-up">{errors.email}</p>}
         </div>
         
-        <div>
-          <label className="block text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide">Password</label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-slate-300">Password</label>
+          <div className="relative group/input">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within/input:text-amber-400 transition-colors duration-300">
               <Lock size={18} />
             </div>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={`w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white/5 border ${errors.password ? 'border-rose-400' : 'border-white/10'} focus:outline-none focus:border-amber-400/50 focus:bg-white/10 text-white transition-all duration-300 placeholder:text-slate-500`}
+              className={`w-full pl-11 pr-12 py-3 bg-[#141824] border ${errors.password ? 'border-rose-400' : 'border-[#2A2F3E]'} rounded-xl focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 text-white transition-all placeholder:text-slate-500/70 shadow-inner`}
               placeholder="•••••••• (min 6 chars)"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-white transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
-          {errors.password && <p className="text-rose-400 text-xs mt-2 font-bold ml-1">{errors.password}</p>}
+          {errors.password && <p className="text-rose-400 text-xs mt-1 animate-fade-in-up">{errors.password}</p>}
         </div>
         
-        <div>
-          <label className="block text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide">Confirm Password</label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-slate-300">Confirm Password</label>
+          <div className="relative group/input">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within/input:text-amber-400 transition-colors duration-300">
               <Lock size={18} />
             </div>
             <input
-              type="password"
+              type={showConfirmPassword ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white/5 border ${errors.confirmPassword ? 'border-rose-400' : 'border-white/10'} focus:outline-none focus:border-amber-400/50 focus:bg-white/10 text-white transition-all duration-300 placeholder:text-slate-500`}
-              placeholder="••••••••"
+              className={`w-full pl-11 pr-12 py-3 bg-[#141824] border ${errors.confirmPassword ? 'border-rose-400' : 'border-[#2A2F3E]'} rounded-xl focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 text-white transition-all placeholder:text-slate-500/70 shadow-inner`}
+              placeholder="Confirm your password"
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-white transition-colors"
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
-          {errors.confirmPassword && <p className="text-rose-400 text-xs mt-2 font-bold ml-1">{errors.confirmPassword}</p>}
+          {errors.confirmPassword && <p className="text-rose-400 text-xs mt-1 animate-fade-in-up">{errors.confirmPassword}</p>}
         </div>
         
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 py-4 rounded-full hover:scale-[1.02] transition-all font-bold text-lg disabled:opacity-50 mt-4 shadow-[0_0_20px_rgba(245,158,11,0.2)]"
+          className="relative overflow-hidden w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-900 py-3 rounded-xl transition-all font-bold text-[15px] shadow-[0_4px_14px_0_rgba(245,158,11,0.39)] disabled:opacity-50 mt-2 flex justify-center items-center gap-2 group/btn"
         >
-          {loading ? "Creating Account..." : <>Sign Up <ArrowRight size={20} /></>}
+          {loading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            "Create Account"
+          )}
         </button>
       </form>
       
-      <p className="mt-8 text-center text-slate-400">
+      <p className="mt-6 text-center text-slate-400 text-sm">
         Already have an account? <Link to="/login" className="text-white hover:text-amber-400 font-bold transition-colors ml-1">Log in</Link>
       </p>
     </div>

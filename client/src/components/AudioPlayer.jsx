@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { getStoryAudioUrl } from '../services/speech';
 import { Play, Pause, AlertTriangle } from 'lucide-react';
 
-function AudioPlayer({ storyId }) {
+function AudioPlayer({ storyId, audioUrl }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -12,7 +12,7 @@ function AudioPlayer({ storyId }) {
   const audioRef = useRef(null);
 
   useEffect(() => {
-    // Reset state if storyId changes
+    // Reset state if source changes
     setIsPlaying(false);
     setCurrentTime(0);
     setError(false);
@@ -20,7 +20,22 @@ function AudioPlayer({ storyId }) {
       audioRef.current.pause();
       audioRef.current.load();
     }
-  }, [storyId]);
+  }, [storyId, audioUrl]);
+
+  useEffect(() => {
+    const handleGlobalPlay = (e) => {
+      if (e.target !== audioRef.current && isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    };
+    
+    // Add event listener to document in capturing phase to catch all play events
+    document.addEventListener('play', handleGlobalPlay, true);
+    return () => {
+      document.removeEventListener('play', handleGlobalPlay, true);
+    };
+  }, [isPlaying]);
 
   const togglePlayPause = () => {
     if (isPlaying) {
@@ -80,7 +95,7 @@ function AudioPlayer({ storyId }) {
       
       <audio
         ref={audioRef}
-        src={getStoryAudioUrl(storyId)}
+        src={audioUrl || getStoryAudioUrl(storyId)}
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
         onEnded={() => setIsPlaying(false)}
