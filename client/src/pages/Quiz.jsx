@@ -112,18 +112,22 @@ function Quiz() {
   }
 
   // --- RESULTS SCREEN ---
-  if (isFinished) {
-    const score = allResults.filter(r => r.correct).length;
-    const total = quizData.questions.length;
-    
-    if (!hasSavedProgress && profile) {
+  useEffect(() => {
+    if (isFinished && !hasSavedProgress && profile) {
       setHasSavedProgress(true);
+      const score = allResults.filter(r => r.correct).length;
       const earnedXp = score * 10;
+      
       updateUserProfile(user.id, {
         xp: (profile.xp || 0) + earnedXp,
         storiesRead: (profile.storiesRead || 0) + 1
       }).catch(err => console.error("Failed to save progress", err));
     }
+  }, [isFinished, hasSavedProgress, profile, allResults, user?.id]);
+
+  if (isFinished) {
+    const score = allResults.filter(r => r.correct).length;
+    const total = quizData.questions.length;
     
     let message = "";
     if (score === total) {
