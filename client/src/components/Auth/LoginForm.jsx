@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { loginUser, sendPasswordResetEmail } from '../../services/auth';
 import { getUserProfile } from '../../services/profile';
-import GoogleLogin from './GoogleLogin';
 import { Mail, Lock, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function LoginForm() {
@@ -134,16 +133,6 @@ export default function LoginForm() {
           {loading ? "Signing in..." : <>Log In <ArrowRight size={20} /></>}
         </button>
       </form>
-      
-      <div className="mt-8 flex items-center justify-between">
-        <hr className="w-full border-white/10" />
-        <span className="px-4 text-slate-500 text-sm font-medium">or continue with</span>
-        <hr className="w-full border-white/10" />
-      </div>
-      
-      <div className="mt-8">
-        <GoogleLogin />
-      </div>
       
       <p className="mt-8 text-center text-slate-400">
         Don't have an account? <Link to="/register" className="text-white hover:text-amber-400 font-bold transition-colors ml-1">Create one</Link>
