@@ -34,17 +34,25 @@ async function generateQuizForStory(story) {
 
   console.log(`Generating 30 questions for: ${story.title}`);
 
+  const slug = story.slug;
+  const indexFile = path.join(__dirname, 'output', 'stories-index', `${slug}.json`);
+  let storyContent = "Content not found.";
+  if (await fs.pathExists(indexFile)) {
+    const idx = await fs.readJson(indexFile);
+    storyContent = idx.fullText || "Content missing.";
+  }
+
   const prompt = `
 You are an expert Islamic educator and curriculum developer for children.
 I will provide you with a children's story in Urdu.
-Your task is to generate EXACTLY 30 multiple-choice questions (MCQs) based on the story.
+Your task is to generate EXACTLY 30 multiple-choice questions (MCQs) based STRICTLY on the text provided. Do not use outside knowledge.
 
 Requirements:
 1. The questions and options MUST be in correct Urdu text (not roman Urdu).
 2. The questions should test comprehension, moral lessons, and specific details from the story.
 3. Each question must have EXACTLY 4 options.
 4. Provide the correct index (0 to 3).
-5. Provide a short explanation (1-2 sentences) in Urdu of why the answer is correct.
+5. Provide a short explanation (1-2 sentences) in Urdu of why the answer is correct based on the text.
 6. YOU MUST OUTPUT ONLY VALID JSON! No markdown blocks, no text before or after.
 
 JSON Format:
@@ -62,7 +70,6 @@ JSON Format:
       "correctIndex": 0,
       "explanation": "اردو میں وضاحت..."
     }
-    // ... exactly 30 questions
   ]
 }
 
@@ -70,7 +77,7 @@ Story Content:
 Title: ${story.title}
 Category: ${story.category}
 Content:
-${story.content}
+${storyContent}
   `.trim();
 
   try {
