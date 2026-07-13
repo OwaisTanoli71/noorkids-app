@@ -6,6 +6,7 @@ import AudioPlayer from "../components/AudioPlayer";
 import { Volume2, VolumeX, Bot, ClipboardList, Bookmark, ArrowLeft, Loader2, Sparkles, Trophy } from "lucide-react";
 import useAuth from '../hooks/useAuth';
 import { updateUserProfile } from '../services/profile';
+import { markStoryAsRead } from '../services/progress';
 import confetti from 'canvas-confetti';
 
 function StoryDetails() {
@@ -75,6 +76,14 @@ function StoryDetails() {
       await updateUserProfile(user.id, {
         storiesRead: newReadCount
       });
+
+      // Synchronize reading progress to the backend
+      try {
+        await markStoryAsRead(user.id, id);
+      } catch (err) {
+        console.error("Failed to sync reading progress", err);
+      }
+
       if (refreshProfile) refreshProfile(); // Trigger context update
 
       // Celebration Party!

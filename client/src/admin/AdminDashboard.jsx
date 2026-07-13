@@ -21,6 +21,7 @@ const AdminDashboard = () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
+        if (!token) throw new Error("No authentication token found");
         
         const [usersRes, storiesRes] = await Promise.all([
           fetch('http://localhost:5000/api/admin/users', {
@@ -100,9 +101,6 @@ const AdminDashboard = () => {
         <div className="flex gap-3">
           <button className="flex items-center gap-2 bg-[var(--admin-surface)] text-[var(--admin-text-secondary)] px-4 py-2.5 rounded-xl text-sm font-medium hover:text-[var(--admin-text-primary)] hover:bg-[var(--admin-surface-hover)] transition-colors border border-[var(--admin-border)] shadow-sm">
             <RefreshCw size={16} /> Refresh
-          </button>
-          <button className="flex items-center gap-2 bg-[var(--admin-accent)] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 border border-transparent hover:opacity-90">
-            <Download size={16} /> Export Report
           </button>
         </div>
       </div>

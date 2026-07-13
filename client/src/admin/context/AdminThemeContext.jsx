@@ -10,10 +10,8 @@ export const AdminThemeProvider = ({ children }) => {
     if (savedTheme) {
       return savedTheme;
     }
-    // Check system preference
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
+    // We enforce 'light' theme as the default premium dashboard look,
+    // overriding the system's dark mode preference for the admin side.
     return 'light';
   });
 

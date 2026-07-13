@@ -86,8 +86,14 @@ export default function AdminReviews() {
       </div>
 
       {reviews.length === 0 ? (
-        <div className={`p-12 text-center rounded-2xl border ${adminTheme === 'dark' ? 'bg-[#131b2f] border-slate-800 text-slate-400' : 'bg-white border-slate-200 text-slate-500'}`}>
-          No reviews found.
+        <div className={`flex flex-col items-center justify-center py-20 px-4 text-center rounded-2xl border border-dashed ${adminTheme === 'dark' ? 'bg-[var(--admin-surface)] border-[var(--admin-border)]' : 'bg-white border-slate-300'}`}>
+          <div className="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-4 shadow-sm">
+            <MessageSquare size={28} />
+          </div>
+          <h3 className="text-xl font-bold text-[var(--admin-text-primary)] mb-2">No Reviews Yet</h3>
+          <p className="text-[var(--admin-text-secondary)] max-w-sm mx-auto">
+            When parents submit their feedback and reviews on the landing page, they will appear here for your approval.
+          </p>
         </div>
       ) : (
         <div className="grid gap-6">

@@ -4,25 +4,8 @@ import { Flame, Star, BookOpen } from 'lucide-react';
 
 function Dashboard() {
   const { profile } = useContext(AuthContext);
-  const [localStoriesRead, setLocalStoriesRead] = useState(0);
 
-  useEffect(() => {
-    const checkStories = () => {
-      const completed = JSON.parse(localStorage.getItem('completedStories') || '[]');
-      setLocalStoriesRead(completed.length);
-    };
-    
-    checkStories();
-    window.addEventListener('focus', checkStories);
-    window.addEventListener('storage', checkStories);
-    
-    return () => {
-      window.removeEventListener('focus', checkStories);
-      window.removeEventListener('storage', checkStories);
-    };
-  }, []);
-  
-  const displayStoriesRead = Math.max(profile?.storiesRead || 0, localStoriesRead);
+  const displayStoriesRead = profile?.storiesRead || 0;
   
   return (
     <div className="max-w-7xl mx-auto px-4 pt-8 md:pt-12">

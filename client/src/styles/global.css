@@ -10,6 +10,7 @@
 
   --font-display: "Outfit", sans-serif;
   --font-body: "Inter", sans-serif;
+  --font-admin: "Plus Jakarta Sans", sans-serif;
   --font-nastaliq: "Jameel Noori Nastaleeq Kasheeda", "Jameel Noori Nastaleeq", "Noto Nastaliq Urdu", serif;
   --animate-shimmer: shimmer 2s infinite linear;
   --animate-shake: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
@@ -164,16 +165,17 @@ h1, h2, h3, h4, h5, h6 {
 .tajweed.madd_2, .tajweed.madd_246, .tajweed.madd_4, .tajweed.madd_45, .tajweed.madd_6, .tajweed.madd { color: #ef4444; } /* Red */
 .tajweed.lam_shamsiyyah, .tajweed.hamzat_wasl { color: #64748b; } /* Slate for silent letters */
 
-/* Admin Portal Theme Variables */
+/* Admin Portal Theme Variables (Premium Modern Aesthetic) */
 .admin-portal {
-  --admin-bg: #f8fafc;
-  --admin-surface: #ffffff;
+  font-family: var(--font-admin);
+  --admin-bg: #f8fafc; /* Lighter, cleaner background */
+  --admin-surface: #ffffff; /* Pure white cards */
   --admin-surface-hover: #f1f5f9;
   --admin-border: #e2e8f0;
   --admin-text-primary: #0f172a;
-  --admin-text-secondary: #64748b;
-  --admin-accent: #4f46e5;
-  --admin-accent-bg: #eef2ff;
+  --admin-text-secondary: #475569; /* Slightly darker for better readability */
+  --admin-accent: #2563eb; /* A premium royal/trust blue instead of purple/indigo */
+  --admin-accent-bg: #eff6ff;
 }
 
 .admin-portal.admin-dark {

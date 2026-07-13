@@ -6,6 +6,7 @@ import { useAdminTheme } from './context/AdminThemeContext';
 
 const AdminLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
   const { adminTheme, toggleAdminTheme } = useAdminTheme();
 
@@ -100,15 +101,7 @@ const AdminLayout = ({ children }) => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 z-10">
         {/* Top Navigation Bar */}
-        <header className="hidden md:flex items-center justify-between px-8 py-4 bg-[var(--admin-surface)]/80 backdrop-blur-md border-b border-[var(--admin-border)] sticky top-0 z-20 transition-colors duration-300">
-          <div className="flex items-center gap-4 bg-[var(--admin-surface-hover)] border border-[var(--admin-border)] rounded-full px-4 py-2 w-96 transition-all focus-within:ring-2 focus-within:ring-[var(--admin-accent)] focus-within:border-[var(--admin-accent)] shadow-inner">
-            <Search size={18} className="text-[var(--admin-text-secondary)]" />
-            <input 
-              type="text" 
-              placeholder="Search across the portal..." 
-              className="bg-transparent border-none outline-none text-sm text-[var(--admin-text-primary)] placeholder-[var(--admin-text-secondary)] w-full"
-            />
-          </div>
+        <header className="hidden md:flex items-center justify-end px-8 py-4 bg-[var(--admin-surface)]/80 backdrop-blur-md border-b border-[var(--admin-border)] sticky top-0 z-20 transition-colors duration-300">
           
           <div className="flex items-center gap-6">
             <button 
@@ -118,10 +111,37 @@ const AdminLayout = ({ children }) => {
             >
               {adminTheme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
             </button>
-            <button className="relative p-2 text-[var(--admin-text-secondary)] hover:text-[var(--admin-accent)] transition-colors rounded-full hover:bg-[var(--admin-surface-hover)]">
-              <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-[var(--admin-surface)]"></span>
-            </button>
+            
+            {/* Notifications Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 text-[var(--admin-text-secondary)] hover:text-[var(--admin-accent)] transition-colors rounded-full hover:bg-[var(--admin-surface-hover)]"
+              >
+                <Bell size={20} />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full border-2 border-[var(--admin-surface)]"></span>
+              </button>
+
+              {showNotifications && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowNotifications(false)}></div>
+                  <div className="absolute right-0 mt-2 w-80 bg-[var(--admin-surface)] rounded-2xl shadow-xl border border-[var(--admin-border)] overflow-hidden z-20 animate-fade-in-up">
+                    <div className="px-4 py-3 border-b border-[var(--admin-border)] bg-[var(--admin-surface-hover)] flex justify-between items-center">
+                      <h3 className="font-bold text-[var(--admin-text-primary)] text-sm">Notifications</h3>
+                      <span className="text-xs bg-[var(--admin-accent-bg)] text-[var(--admin-accent)] px-2 py-1 rounded-full font-semibold">0 New</span>
+                    </div>
+                    <div className="p-8 flex flex-col items-center justify-center text-center">
+                      <div className="w-12 h-12 bg-[var(--admin-surface-hover)] rounded-full flex items-center justify-center mb-3">
+                        <Bell size={20} className="text-[var(--admin-text-secondary)]" />
+                      </div>
+                      <p className="text-[var(--admin-text-primary)] font-semibold text-sm mb-1">You're all caught up!</p>
+                      <p className="text-[var(--admin-text-secondary)] text-xs">There are no new notifications right now.</p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
             <div className="flex items-center gap-3 pl-6 border-l border-[var(--admin-border)]">
               <div className="w-8 h-8 rounded-full bg-[var(--admin-accent)] flex items-center justify-center text-white font-bold text-sm shadow-md">
                 A
