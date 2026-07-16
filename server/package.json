@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
+    "ai:start": "cd ai-engine && venv\\Scripts\\uvicorn app:app --host 127.0.0.1 --port 8000",
     "build:stories": "node --max-old-space-size=4096 scripts/buildStoryIndex.js",
     "build:quizzes": "node scripts/buildQuizzes.js",
     "build:audio": "node scripts/buildAudio.js"
@@ -16,10 +17,12 @@
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.110.1",
+    "axios": "^1.18.1",
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",
     "express": "^5.1.0",
     "express-rate-limit": "^8.5.2",
+    "form-data": "^4.0.6",
     "fs-extra": "^11.3.6",
     "google-tts-api": "^0.0.6",
     "groq-sdk": "^1.3.0",

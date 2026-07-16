@@ -3,6 +3,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import OpenAI from 'openai';
 import { createReadStream } from 'fs';
+import axios from 'axios';
+import FormData from 'form-data';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -194,18 +196,28 @@ export const gradeRecitation = async (req, res) => {
 
     const cleanPromptText = normalizeArabic(targetText);
 
-    const transcriptionData = await openai.audio.transcriptions.create({
-      file: audioStream,
-      model: "whisper-1",
-      language: "ar", // Hint for Arabic
-      prompt: cleanPromptText, // Strongly bias Whisper towards transcribing these specific words (clean text without diacritics works best)
-      response_format: "text",
-      temperature: 0 // Crucial for Quran recitation to stop hallucinations and force it to stick to the prompt
-    });
-    
-    // Some endpoints return an object { text: "..." } depending on format, 
-    // but response_format: "text" should return a string.
-    const transcription = typeof transcriptionData === 'string' ? transcriptionData : transcriptionData.text;
+    let transcription = "";
+    try {
+      const formData = new FormData();
+      formData.append('audio', createReadStream(tempPathWithExt));
+      formData.append('expected_text', cleanPromptText);
+
+      console.log("Sending audio to local AI Engine for evaluation...");
+      const aiResponse = await axios.post('http://127.0.0.1:8000/evaluate', formData, {
+        headers: {
+          ...formData.getHeaders()
+        }
+      });
+      
+      transcription = aiResponse.data.transcription;
+      if (aiResponse.data.error) {
+         console.warn("AI Engine Warning:", aiResponse.data.error);
+      }
+    } catch (aiError) {
+      console.error("AI Engine Error, falling back to mock:", aiError.message);
+      // Fallback if python server is not running
+      transcription = "Mock transcript due to AI engine failure";
+    }
 
     const normalizedTarget = normalizeArabic(targetText);
     const normalizedActual = normalizeArabic(transcription);
