@@ -7,5 +7,9 @@ const API_URL = "http://localhost:5000/api";
  * @returns {string} The full streaming URL
  */
 export const getStoryAudioUrl = (storyId) => {
-  return `${API_URL}/stories/${storyId}/audio`;
+  return `${API_URL}/stories/${storyId}/audio?v=6`;
+};
+
+export const getStoryTimingUrl = (storyId) => {
+  return `${API_URL}/stories/${storyId}/timing?t=${Date.now()}`;
 };

@@ -12,6 +12,15 @@ export default defineConfig({
       workbox: {
         runtimeCaching: [
           {
+            urlPattern: /\/api\/quran\/audio\?url=.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'quran-audio',
+              expiration: { maxEntries: 5000, maxAgeSeconds: 31536000 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          {
             urlPattern: /^https:\/\/cdn\.islamic\.network\/quran\/audio\/.*\.mp3$/,
             handler: 'CacheFirst',
             options: {
@@ -21,7 +30,7 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /\/api\/quran\/.*/,
+            urlPattern: /\/api\/quran\/surah\/.*/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'quran-data',

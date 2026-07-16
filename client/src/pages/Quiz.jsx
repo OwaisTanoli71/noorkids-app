@@ -316,7 +316,7 @@ function Quiz() {
 
       {/* Question Card */}
       <div className="bg-slate-900/95 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.3)] backdrop-blur-none rounded-[2rem] p-5 md:p-8 text-white" dir={lang === 'ur' ? 'rtl' : 'ltr'}>
-        <h2 className={`text-xl md:text-2xl font-bold mb-6 leading-snug text-slate-100 text-start ${lang === 'ur' ? 'font-urdu' : 'font-sans'}`}>
+        <h2 className={`mb-6 text-slate-100 text-start ${lang === 'ur' ? 'font-urdu text-[1.4rem] md:text-[1.8rem] leading-[2.2rem] md:leading-[3rem]' : 'text-xl md:text-2xl font-bold leading-snug font-sans'}`}>
           {currentQuestion.question}
         </h2>
 
@@ -345,7 +345,7 @@ function Quiz() {
                 key={index}
                 onClick={() => handleOptionSelect(index)}
                 disabled={feedback !== null || isSubmitting}
-                className={`relative w-full text-start px-5 py-3 rounded-xl border-2 transition-all ${btnClass} ${lang === 'ur' ? 'font-urdu text-base' : 'font-sans text-sm font-medium'}`}
+                className={`relative w-full text-start px-5 py-3 rounded-xl border-2 transition-all flex items-center justify-between ${btnClass} ${lang === 'ur' ? 'font-urdu text-[1.1rem] md:text-[1.25rem] leading-[1.6rem] md:leading-[2rem]' : 'font-sans text-sm font-medium'}`}
                 dir={lang === 'ur' ? 'rtl' : 'ltr'}
               >
                 <span>{opt}</span>
@@ -367,12 +367,12 @@ function Quiz() {
                   {feedback.correct ? <CheckCircle2 size={20} /> : <XCircle size={20} />}
                 </div>
                 <div>
-                  <h3 className={`text-base font-bold mb-1 ${feedback.correct ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <h3 className={`font-bold mb-1 ${feedback.correct ? 'text-emerald-400' : 'text-red-400'} ${lang === 'ur' ? 'font-urdu text-[1.4rem] md:text-[1.6rem]' : 'text-base'}`}>
                     {feedback.correct 
                       ? (lang === 'ur' ? 'بہت خوب! صحیح جواب!' : 'Awesome! Correct Answer!') 
                       : (lang === 'ur' ? 'غلط جواب!' : 'Incorrect!')}
                   </h3>
-                  <p className={`text-slate-300 leading-snug ${lang === 'ur' ? 'font-urdu text-base' : 'font-sans text-sm'}`}>
+                  <p className={`text-slate-300 leading-snug ${lang === 'ur' ? 'font-urdu text-[1.2rem] md:text-[1.4rem] leading-relaxed' : 'font-sans text-sm'}`}>
                     {feedback.explanation}
                   </p>
                 </div>

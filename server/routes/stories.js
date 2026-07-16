@@ -32,7 +32,12 @@ router.get("/:id", async (req, res) => {
         const indexFile = path.join(__dirname, '..', 'output', 'stories-index', `${story.slug}.json`);
         if (await fs.pathExists(indexFile)) {
           const storyData = await fs.readJson(indexFile);
-          res.json({ ...story, content: storyData.fullText });
+          res.json({ 
+            ...story, 
+            content: storyData.fullText,
+            englishContent: storyData.englishContent,
+            englishTitle: storyData.englishTitle
+          });
         } else {
           res.json(story);
         }
@@ -92,6 +97,22 @@ router.get("/:id/audio", async (req, res) => {
   } catch (error) {
     console.error("Error streaming audio:", error);
     res.status(500).json({ error: "Failed to stream audio" });
+  }
+});
+
+router.get("/:id/timing", async (req, res) => {
+  try {
+    const timingPath = path.join(__dirname, '..', 'output', 'audio', `${req.params.id}-timing.json`);
+    
+    if (!await fs.pathExists(timingPath)) {
+      return res.status(404).json({ error: "Timing data for this story isn't ready yet." });
+    }
+
+    const timingData = await fs.readJson(timingPath);
+    res.json(timingData);
+  } catch (error) {
+    console.error("Error sending timing data:", error);
+    res.status(500).json({ error: "Failed to load timing data" });
   }
 });
 

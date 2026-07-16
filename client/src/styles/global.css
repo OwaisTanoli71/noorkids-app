@@ -12,6 +12,8 @@
   --font-body: "Inter", sans-serif;
   --font-admin: "Plus Jakarta Sans", sans-serif;
   --font-nastaliq: "Jameel Noori Nastaleeq Kasheeda", "Jameel Noori Nastaleeq", "Noto Nastaliq Urdu", serif;
+  --font-urdu: "Jameel Noori Nastaleeq", "Noto Nastaliq Urdu", serif;
+  --font-quran: "Amiri Quran", serif;
   --animate-shimmer: shimmer 2s infinite linear;
   --animate-shake: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
   --animate-fade-in-up: fade-in-up 0.6s ease-out forwards;

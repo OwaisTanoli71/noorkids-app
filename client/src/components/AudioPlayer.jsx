@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { getStoryAudioUrl } from '../services/speech';
 import { Play, Pause, AlertTriangle } from 'lucide-react';
 
-function AudioPlayer({ storyId, audioUrl }) {
+function AudioPlayer({ storyId, audioUrl, onTimeUpdate: parentOnTimeUpdate, compact = false, startTime = 0 }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -16,10 +16,7 @@ function AudioPlayer({ storyId, audioUrl }) {
     setIsPlaying(false);
     setCurrentTime(0);
     setError(false);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.load();
-    }
+    // Don't eagerly call .load() as it triggers network requests for all ayahs simultaneously
   }, [storyId, audioUrl]);
 
   useEffect(() => {
@@ -30,19 +27,48 @@ function AudioPlayer({ storyId, audioUrl }) {
       }
     };
     
+    const handleKeyDown = (e) => {
+      if (e.code === 'Space') {
+        const isTextInput = e.target.tagName === 'INPUT' && (e.target.type === 'text' || e.target.type === 'email' || e.target.type === 'password' || e.target.type === 'search');
+        const isTextarea = e.target.tagName === 'TEXTAREA';
+        
+        if (!isTextInput && !isTextarea) {
+          e.preventDefault();
+          if (isPlaying) {
+            audioRef.current.pause();
+          } else {
+            if (audioRef.current.currentTime < 0.1 && startTime > 0) {
+              audioRef.current.currentTime = startTime;
+            }
+            audioRef.current.play().catch(err => {
+              console.error("Audio playback failed", err);
+              setError(true);
+            });
+          }
+          setIsPlaying(!isPlaying);
+        }
+      }
+    };
+    
     // Add event listener to document in capturing phase to catch all play events
     document.addEventListener('play', handleGlobalPlay, true);
+    window.addEventListener('keydown', handleKeyDown);
+    
     return () => {
       document.removeEventListener('play', handleGlobalPlay, true);
+      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isPlaying]);
+  }, [isPlaying, startTime]);
 
-  const togglePlayPause = () => {
+  const togglePlayPause = (e) => {
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play().catch(e => {
-        console.error("Audio playback failed", e);
+      if (audioRef.current.currentTime < 0.1 && startTime > 0) {
+        audioRef.current.currentTime = startTime;
+      }
+      audioRef.current.play().catch(err => {
+        console.error("Audio playback failed", err);
         setError(true);
       });
     }
@@ -50,17 +76,57 @@ function AudioPlayer({ storyId, audioUrl }) {
   };
 
   const onTimeUpdate = () => {
-    setCurrentTime(audioRef.current.currentTime);
+    const time = audioRef.current.currentTime;
+    
+    // FORCE SKIP: If audio is playing before startTime, aggressively jump it!
+    if (startTime > 0 && time < startTime - 0.1) {
+      audioRef.current.currentTime = startTime;
+      setCurrentTime(startTime);
+      if (parentOnTimeUpdate) parentOnTimeUpdate(startTime);
+      return;
+    }
+
+    setCurrentTime(time);
+    if (parentOnTimeUpdate) {
+      parentOnTimeUpdate(time);
+    }
   };
 
   const onLoadedMetadata = () => {
     setDuration(audioRef.current.duration);
   };
 
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    const applyStartTime = () => {
+      if (startTime > 0 && audio.currentTime < 0.1) {
+        audio.currentTime = startTime;
+        setCurrentTime(startTime);
+      }
+    };
+
+    if (audio.readyState >= 1) {
+      applyStartTime();
+    }
+    
+    audio.addEventListener('loadedmetadata', applyStartTime);
+    audio.addEventListener('canplay', applyStartTime);
+    
+    return () => {
+      audio.removeEventListener('loadedmetadata', applyStartTime);
+      audio.removeEventListener('canplay', applyStartTime);
+    };
+  }, [startTime]);
+
   const onSeek = (e) => {
     const time = Number(e.target.value);
     audioRef.current.currentTime = time;
     setCurrentTime(time);
+    if (parentOnTimeUpdate) {
+      parentOnTimeUpdate(time);
+    }
   };
 
   const changeSpeed = () => {
@@ -91,23 +157,26 @@ function AudioPlayer({ storyId, audioUrl }) {
   }
 
   return (
-    <div className="glass-panel rounded-3xl p-6 mt-6 flex flex-col md:flex-row items-center gap-6 shadow-xl border border-white/5">
+    <div className={`p-4 flex flex-row items-center gap-4 border border-white/5 shadow-2xl ${compact ? 'rounded-full bg-slate-900/30 backdrop-blur-md' : 'rounded-3xl mt-6 glass-panel p-6'}`}>
       
       <audio
         ref={audioRef}
-        src={audioUrl || getStoryAudioUrl(storyId)}
+        src={(audioUrl || getStoryAudioUrl(storyId)) + (startTime > 0 ? `#t=${startTime}` : '')}
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
         onEnded={() => setIsPlaying(false)}
-        onError={() => setError(true)}
+        onError={(e) => {
+          console.error("Audio error:", e.target.error);
+          setError(true);
+        }}
       />
 
       {/* Play/Pause Button */}
       <button 
         onClick={togglePlayPause}
-        className="bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 w-16 h-16 rounded-full flex items-center justify-center hover:scale-105 transition-transform shrink-0 shadow-[0_0_20px_rgba(245,158,11,0.3)]"
+        className={`bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 rounded-full flex items-center justify-center hover:scale-105 transition-transform shrink-0 shadow-[0_0_20px_rgba(245,158,11,0.3)] ${compact ? 'w-12 h-12' : 'w-16 h-16'}`}
       >
-        {isPlaying ? <Pause fill="currentColor" size={24} /> : <Play fill="currentColor" size={24} className="ml-1" />}
+        {isPlaying ? <Pause fill="currentColor" size={compact ? 20 : 24} /> : <Play fill="currentColor" size={compact ? 20 : 24} className="ml-1" />}
       </button>
 
       {/* Progress Bar & Timers */}

@@ -54,6 +54,34 @@ export const getSurah = async (req, res) => {
   }
 };
 
+import https from 'https';
+import http from 'http';
+
+export const proxyAudio = (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: "No URL provided" });
+
+  const client = url.startsWith('https') ? https : http;
+  
+  client.get(url, (proxyRes) => {
+    if (proxyRes.statusCode !== 200) {
+      return res.status(proxyRes.statusCode).json({ error: "Failed to fetch audio" });
+    }
+    
+    // Pass headers along with explicit CORS and caching
+    res.set('Content-Type', proxyRes.headers['content-type'] || 'audio/mpeg');
+    res.set('Accept-Ranges', 'bytes');
+    res.set('Content-Length', proxyRes.headers['content-length']);
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+    
+    proxyRes.pipe(res);
+  }).on('error', (e) => {
+    console.error("Proxy error:", e);
+    res.status(500).json({ error: "Internal server error" });
+  });
+};
+
 // Normalization function
 function normalizeArabic(text) {
   if (!text) return "";
@@ -82,6 +110,9 @@ function normalizeArabic(text) {
   
   // Remove Tatweel (Kashida)
   cleanText = cleanText.replace(/\u0640/g, '');
+  
+  // Remove Arabic punctuation (comma, semicolon, question mark) and standard punctuation
+  cleanText = cleanText.replace(/[\u060C\u061B\u061F\.,!\?]/g, '');
   
   // Remove all non-arabic word characters, just keep spaces
   cleanText = cleanText.replace(/[^\u0600-\u06FF\s]/g, '');
@@ -161,14 +192,15 @@ export const gradeRecitation = async (req, res) => {
       apiKey: process.env.OPENAI_API_KEY
     });
 
-    const cleanPromptText = targetText.replace(/<[^>]*>/g, '').replace(/\[[a-zA-Z]+(:\d+)?\[/g, '').replace(/\]/g, '');
+    const cleanPromptText = normalizeArabic(targetText);
 
     const transcriptionData = await openai.audio.transcriptions.create({
       file: audioStream,
       model: "whisper-1",
       language: "ar", // Hint for Arabic
-      prompt: cleanPromptText, // Strongly bias Whisper towards transcribing these specific words
-      response_format: "text"
+      prompt: cleanPromptText, // Strongly bias Whisper towards transcribing these specific words (clean text without diacritics works best)
+      response_format: "text",
+      temperature: 0 // Crucial for Quran recitation to stop hallucinations and force it to stick to the prompt
     });
     
     // Some endpoints return an object { text: "..." } depending on format, 
@@ -178,7 +210,16 @@ export const gradeRecitation = async (req, res) => {
     const normalizedTarget = normalizeArabic(targetText);
     const normalizedActual = normalizeArabic(transcription);
     
+    console.log("=== RECITATION GRADING DEBUG ===");
+    console.log("Target Original:", targetText);
+    console.log("Cleaned Prompt:", cleanPromptText);
+    console.log("Whisper Output:", transcription);
+    console.log("Norm Target:", normalizedTarget);
+    console.log("Norm Actual:", normalizedActual);
+
     const { result, score } = alignWords(normalizedTarget, normalizedActual, targetText);
+    console.log("Final Score:", score);
+    console.log("================================");
 
     // Clean up temp file
     fs.unlink(tempPathWithExt, (err) => {

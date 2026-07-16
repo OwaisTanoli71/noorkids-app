@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AIChat from "../components/AI/AIChat";
 import ProgressBar from "../components/ProgressBar";
@@ -8,6 +8,7 @@ import useAuth from '../hooks/useAuth';
 import { updateUserProfile } from '../services/profile';
 import { markStoryAsRead } from '../services/progress';
 import confetti from 'canvas-confetti';
+import { getStoryTimingUrl } from '../services/speech';
 
 function StoryDetails() {
   const { id } = useParams();
@@ -22,6 +23,32 @@ function StoryDetails() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [achievementUnlocked, setAchievementUnlocked] = useState(null);
   const [quizAttempts, setQuizAttempts] = useState(0);
+  const [timingData, setTimingData] = useState(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [language, setLanguage] = useState('ur');
+
+  const activeWordRef = useRef(null);
+  const lastScrolledIndex = useRef(-1);
+  const currentTimeRef = useRef(0);
+  const [, forceUpdate] = useState(0);
+
+  const handleTimeUpdate = (time) => {
+    currentTimeRef.current = time;
+    forceUpdate(n => n + 1);
+  };
+
+  const activeIndex = timingData ? timingData.findIndex((item, index) => {
+    const nextItem = timingData[index + 1];
+    const ct = currentTimeRef.current;
+    return ct >= item.start && (nextItem ? ct < nextItem.start : ct <= item.end + 2);
+  }) : -1;
+
+  useEffect(() => {
+    if (showAudio && activeIndex !== -1 && activeIndex !== lastScrolledIndex.current && activeWordRef.current) {
+      activeWordRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      lastScrolledIndex.current = activeIndex;
+    }
+  }, [activeIndex, showAudio]);
 
   useEffect(() => {
     if (id) {
@@ -142,6 +169,15 @@ function StoryDetails() {
         console.error(err);
         navigate("/stories");
       });
+
+    fetch(getStoryTimingUrl(id))
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) {
+          setTimingData(data);
+        }
+      })
+      .catch(err => console.error("Failed to fetch timing data", err));
   }, [id, navigate, user]);
 
   if (loading) {
@@ -188,10 +224,25 @@ function StoryDetails() {
             <Sparkles size={12} /> {story.category}
           </div>
           
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 tracking-tight text-center drop-shadow-md">
-            {story.title}
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-2 tracking-tight text-center drop-shadow-md">
+            {language === 'en' && story.englishTitle ? story.englishTitle : story.title}
           </h1>
           
+          {(() => {
+            const hasSplit = story.content && story.content.includes("پیارے");
+            if (hasSplit && story.content.indexOf("پیارے") < 150) {
+              const urduTitle = story.content.split("پیارے")[0].trim();
+              if (urduTitle) {
+                return (
+                  <h2 className="text-2xl md:text-3xl font-urdu text-amber-400 mb-6 tracking-wide text-center drop-shadow-md" dir="rtl">
+                    {urduTitle}
+                  </h2>
+                );
+              }
+            }
+            return <div className="mb-6"></div>;
+          })()}
+
           <div className="flex gap-4 items-center">
             <div className="w-10 h-10 rounded-full bg-[#2a3041] border border-white/5 flex items-center justify-center text-xs text-slate-400 font-bold uppercase">
               {story.difficulty?.charAt(0) || "E"}
@@ -202,49 +253,156 @@ function StoryDetails() {
           </div>
         </div>
 
-        {/* AUDIO PLAYER */}
-        {showAudio && (
-          <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
-            <AudioPlayer storyId={story.id} />
-          </div>
-        )}
-
-        {/* STORY TEXT (READ STORY THING) */}
-        <div className="bg-[#1e2332] rounded-[3rem] p-8 md:p-14 lg:p-20 border border-white/5 shadow-xl">
-          <h2 className="text-xl md:text-2xl font-bold text-amber-400 mb-10 pb-6 border-b border-white/5 tracking-wide">
-            📖 Let's Read
-          </h2>
+        {/* COMPUTE TITLE SKIP LOGIC */}
+        {(() => {
+          let bodyStartIndex = 0;
+          let titleSkipTime = 0;
+          if (timingData && timingData.length > 0) {
+            for (let i = 0; i < Math.min(30, timingData.length); i++) {
+              if (timingData[i].word.includes("پیارے")) {
+                bodyStartIndex = i;
+                titleSkipTime = timingData[i].start + 0.05; // Added slight buffer to ensure exact start
+                break;
+              }
+            }
+          }
           
-          <div 
-            dir="rtl"
-            className="leading-[3.5rem] md:leading-[4.5rem] text-[1.5rem] md:text-[2rem] text-right whitespace-pre-wrap font-nastaliq text-slate-200"
-          >
-            {story.content}
-          </div>
+          return (
+            <>
+              {/* STORY TEXT (READ STORY THING) */}
+              <div className="bg-[#1e2332] rounded-[3rem] p-8 md:p-14 lg:p-20 border border-white/5 shadow-xl relative">
+                
+                {/* Language Toggle */}
+                {story.englishContent && (
+                  <div className="absolute top-8 right-8 flex items-center bg-[#131722] rounded-full p-1 border border-white/10">
+                    <button
+                      onClick={() => setLanguage('ur')}
+                      className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
+                        language === 'ur' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      اردو
+                    </button>
+                    <button
+                      onClick={() => setLanguage('en')}
+                      className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
+                        language === 'en' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      ENG
+                    </button>
+                  </div>
+                )}
 
-          {/* MORAL LESSON */}
-          {story.moralLesson && (
-            <div className="mt-16 bg-gradient-to-br from-emerald-900/40 to-emerald-800/20 border border-emerald-500/30 rounded-3xl p-8 md:p-10 shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
-              
-              <div className="flex items-center gap-4 mb-6 relative z-10">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-2xl shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-                  💡
-                </div>
-                <h3 className="text-xl md:text-2xl font-bold text-emerald-400 tracking-wide uppercase text-shadow-sm">
-                  Moral Lesson
-                </h3>
+                <h2 className="text-xl md:text-2xl font-bold text-amber-400 mb-10 pb-6 border-b border-white/5 tracking-wide">
+                  📖 Let's Read
+                </h2>
+                
+                {language === 'en' && story.englishContent ? (
+                  <div className="text-justify font-sans text-slate-200">
+                    <div className="text-[2rem] md:text-[2.5rem] leading-[3.5rem] font-bold text-amber-300 text-center mb-10 pb-6 border-b border-white/10">
+                      {story.englishTitle}
+                    </div>
+                    <div className="leading-[2.5rem] md:leading-[3.5rem] text-[1.25rem] md:text-[1.5rem] whitespace-pre-wrap">
+                      {story.englishContent}
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    dir="rtl"
+                    className="text-justify font-urdu text-slate-200"
+                  >
+                    {(() => {
+                      if (timingData && timingData.length > 0) {
+                        const titleWords = timingData.slice(0, bodyStartIndex);
+                        const bodyWords = timingData.slice(bodyStartIndex);
+                        
+                        return (
+                          <>
+                            {/* Title Section */}
+                            {titleWords.length > 0 && (
+                              <div className="text-[2rem] md:text-[2.5rem] leading-[3.5rem] font-bold text-amber-300 text-center mb-10 pb-6 border-b border-white/10">
+                                {titleWords.map((item, index) => {
+                                  const isActive = index === activeIndex && showAudio;
+                                  return (
+                                    <span 
+                                      key={index} 
+                                      ref={isActive ? activeWordRef : null}
+                                      className={`transition-colors duration-150 rounded ${isActive ? 'text-white bg-amber-500/40 shadow-[0_0_10px_rgba(251,191,36,0.3)]' : ''}`}
+                                    >
+                                      {item.word}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            
+                            {/* Body Section */}
+                            <div className="leading-[3.5rem] md:leading-[4.5rem] text-[1.5rem] md:text-[2rem] whitespace-pre-wrap">
+                              {bodyWords.map((item, i) => {
+                                const index = bodyStartIndex + i;
+                                const isActive = index === activeIndex && showAudio;
+                                return (
+                                  <span 
+                                    key={index} 
+                                    ref={isActive ? activeWordRef : null}
+                                    className={`transition-colors duration-150 rounded ${isActive ? 'text-white bg-amber-500/40 shadow-[0_0_10px_rgba(251,191,36,0.3)]' : ''}`}
+                                  >
+                                    {item.word}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </>
+                        );
+                      } else {
+                        return <div className="leading-[3.5rem] md:leading-[4.5rem] text-[1.5rem] md:text-[2rem] whitespace-pre-wrap">{story.content}</div>;
+                      }
+                    })()}
+                  </div>
+                )}
               </div>
-              
-              <p 
-                dir="rtl" 
-                className="text-right font-nastaliq text-[1.8rem] md:text-[2.2rem] leading-[3rem] md:leading-[4rem] text-emerald-100 relative z-10"
-              >
-                {story.moralLesson}
-              </p>
-            </div>
-          )}
-        </div>
+
+                {/* MORAL LESSON */}
+                {(story.moralLesson || story.englishMoralLesson) && (
+                  <div className="mt-16 bg-gradient-to-br from-emerald-900/40 to-emerald-800/20 border border-emerald-500/30 rounded-3xl p-8 md:p-10 shadow-lg relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
+                    
+                    <div className="flex items-center gap-4 mb-6 relative z-10">
+                      <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-2xl shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                        💡
+                      </div>
+                      <h3 className="text-xl md:text-2xl font-bold text-emerald-400 tracking-wide uppercase text-shadow-sm">
+                        Moral Lesson
+                      </h3>
+                    </div>
+                    
+                    {language === 'en' && story.englishMoralLesson ? (
+                      <p className="text-slate-300 leading-relaxed font-sans text-left relative z-10 text-[1.1rem]">
+                        {story.englishMoralLesson}
+                      </p>
+                    ) : (
+                      <p 
+                        dir="rtl" 
+                        className="text-right font-nastaliq text-[1.8rem] md:text-[2.2rem] leading-[3rem] md:leading-[4rem] text-emerald-100 relative z-10"
+                      >
+                        {story.moralLesson}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+              {/* FIXED BOTTOM AUDIO PLAYER */}
+              {showAudio && language === 'ur' && (
+                <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 md:pb-6 pointer-events-none flex justify-center">
+                  <div className="w-full max-w-[600px] pointer-events-auto">
+                    <AudioPlayer storyId={story.id} onTimeUpdate={handleTimeUpdate} compact={true} startTime={0} />
+                  </div>
+                </div>
+              )}
+            </>
+          );
+        })()}
       </main>
 
       {/* RIGHT SIDEBAR (INTERACTIVE TOOLS) */}

@@ -86,15 +86,16 @@ export default function SurahDetails() {
       }
 
       // Download all audio files in parallel batches (e.g. 5 at a time) to avoid browser limitations
-      const audioUrls = surah.ayahs.map(a => a.audio);
+      const audioUrls = surah.ayahs.map(a => `http://localhost:5000/api/quran/audio?url=${encodeURIComponent(a.audio)}`);
       
       const batchSize = 5;
       for (let i = 0; i < audioUrls.length; i += batchSize) {
         const batch = audioUrls.slice(i, i + batchSize);
         await Promise.all(batch.map(async (url) => {
           try {
-            // Making a fetch request allows Workbox CacheFirst runtime rule to intercept and cache it
-            await fetch(url, { mode: 'no-cors' });
+            // Making a normal fetch request allows Workbox CacheFirst runtime rule to intercept and cache it
+            // We no longer need no-cors because the proxy adds CORS headers
+            await fetch(url);
           } catch (e) {
             console.error("Failed to fetch audio for cache", url, e);
           }
@@ -205,7 +206,7 @@ export default function SurahDetails() {
               
               {/* The Uthmani Text with Tajweed Tags */}
               <div 
-                className="text-right text-3xl md:text-4xl font-nastaliq leading-[2.5] md:leading-[3] text-white flex-1"
+                className="text-right text-3xl md:text-4xl font-quran leading-[2.5] md:leading-[3] text-white flex-1"
                 dir="rtl"
                 dangerouslySetInnerHTML={{ __html: parseTajweed(ayah.text) }}
               />
@@ -218,7 +219,7 @@ export default function SurahDetails() {
 
             {/* Listen and Practice */}
             <div className="mt-6 pt-6 border-t border-white/5">
-              <AudioPlayer audioUrl={ayah.audio} storyId={null} />
+              <AudioPlayer audioUrl={`http://localhost:5000/api/quran/audio?url=${encodeURIComponent(ayah.audio)}`} storyId={null} />
               <PracticeRecitation surahNumber={surah.number} ayahNumber={ayah.numberInSurah} targetText={ayah.text} />
             </div>
           </div>
